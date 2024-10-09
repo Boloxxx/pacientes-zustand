@@ -1,18 +1,46 @@
 import { useForm } from "react-hook-form";
 import Error from "./Error";
-import { DraftPatient, Patient } from "../types";
+import { DraftPatient } from "../types";
 import { usePatientStore } from "../store";
+import { useEffect } from "react";
+import { toast } from "react-toastify";
 
 export default function PatientForm() {
-  const {addPatient}  = usePatientStore()
+  const addPatient = usePatientStore((state) => state.addPatient);
+  const activeId = usePatientStore((state) => state.activeId);
+  const patients = usePatientStore((state) => state.patients);
+  const updatePatient = usePatientStore((state) => state.updatePatient);
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
+    reset,
   } = useForm<DraftPatient>();
 
+  useEffect(() => {
+    if (activeId) {
+      const activePatient = patients.filter(
+        (patient) => patient.id === activeId
+      )[0];
+
+      setValue("name", activePatient.name);
+      setValue("caretaker", activePatient.caretaker);
+      setValue("email", activePatient.email);
+      setValue("date", activePatient.date);
+      setValue("symptoms", activePatient.symptoms);
+    }
+  }, [activeId]);
   const registerPatient = (data: DraftPatient) => {
-    addPatient(data)
+    if (activeId) {
+      updatePatient(data);
+      toast.success('Paciente Actualizado Correctamente')
+    } else {
+      addPatient(data);
+      toast.success('Paciente Registrado correctamente')
+    }
+
+    reset();
   };
 
   return (
@@ -58,9 +86,7 @@ export default function PatientForm() {
               required: "El Propietario es Obligatorio",
             })}
           />
-          {errors.caretaker && (
-            <Error>{errors.caretaker?.message}</Error>
-          )}
+          {errors.caretaker && <Error>{errors.caretaker?.message}</Error>}
         </div>
 
         <div className="mb-5">
